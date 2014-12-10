@@ -1,0 +1,21 @@
+Source: ptxdist
+Section: devel
+Priority: extra
+Maintainer: Enrico Weigelt, metux IT consult <enrico.weigelt@gr13.net>
+Standards-Version: 3.9.3
+Build-Depends: debhelper (>= 7), dh-autoreconf, libncurses-dev, gawk, flex, bison, texinfo, wget, bzip2, gzip, make, gcc, python-dev, patch
+
+Package: ptxdist-2015.09.0
+Architecture: any
+Pre-Depends: debconf
+Depends:  ${misc:Depends}, patch, make, gcc
+Replaces: ptxdist (<< 2014.12.0-mtx1-trusty1)
+Breaks: ptxdist (<< 2014.12.0-mtx1-trusty1)
+Description: Cross toolchain and micro distro toolkit - 2015.09.0
+
+Package: ptxdist
+Architecture: any
+Pre-Depends: debconf
+Depends:  ${misc:Depends}, ptxdist-2015.09.0
+Description: Cross toolchain and micro distro toolkit - MVCC frontend
+

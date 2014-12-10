@@ -5,7 +5,6 @@
 /aclocal.m4
 /Makefile
 /.done
-/.tarball-version
 
 *.orig
 *.swp
