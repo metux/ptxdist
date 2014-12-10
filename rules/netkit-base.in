@@ -1,0 +1,14 @@
+## SECTION=networking
+
+config NETKIT_BASE
+	tristate
+	depends on ( !BUSYBOX_INETD && !BUSYBOX_PING ) || ALLYES
+	prompt "netkit-base"
+	help
+	  netkit-base contains ping and inetd
+
+comment "BusyBox' inetd is selected! (netkit-base)"
+	depends on BUSYBOX_INETD
+
+comment "BusyBox' ping is selected! (netkit-base)"
+	depends on BUSYBOX_PING

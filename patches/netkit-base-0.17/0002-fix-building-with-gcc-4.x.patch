@@ -1,0 +1,22 @@
+From: Michael Olbrich <m.olbrich@pengutronix.de>
+Date: Mon, 10 Dec 2012 18:56:05 +0100
+Subject: [PATCH] fix building with gcc-4.x
+
+Signed-off-by: Michael Olbrich <m.olbrich@pengutronix.de>
+---
+ inetd/servtab.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/inetd/servtab.c b/inetd/servtab.c
+index 3a83080..a96b2bc 100644
+--- a/inetd/servtab.c
++++ b/inetd/servtab.c
+@@ -771,7 +771,7 @@ loadconfigent(struct servtab *cp)
+ 			return;
+ 		}
+ 		
+-#define SWAP(type, a, b) {type c=(type)a; (type)a=(type)b; (type)b=(type)c;}
++#define SWAP(type, a, b) {type c=(type)a; a=(type)b; b=(type)c;}
+ 
+ 		/*
+ 		 * sep->se_wait may be holding the pid of a daemon
