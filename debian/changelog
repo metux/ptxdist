@@ -1,0 +1,5 @@
+ptxdist (2017.11.0-xenial0) xenial; urgency=low
+
+  * Packaging for xenial
+
+ -- Enrico Weigelt, metux IT consult <info@metux.net>  Thu, 27 Mar 2018 21:42:00 +0100
