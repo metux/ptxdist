@@ -1,0 +1,104 @@
+From: Michael Olbrich <m.olbrich@pengutronix.de>
+Date: Mon, 10 Dec 2012 18:08:13 +0100
+Subject: [PATCH] fix cross compiling
+
+Based on a patch from buildroot
+
+Signed-off-by: Michael Olbrich <m.olbrich@pengutronix.de>
+---
+ configure.ac |   51 ++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 34 insertions(+), 17 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 484fda6..17f3519 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -421,6 +421,11 @@ AC_RUN_IFELSE(AC_LANG_PROGRAM([[
+     exit(1);
+ ]]), [
+     libpcap_version_096=yes
++], [
++    libpcap_version_096=no
++], [
++    AC_MSG_WARN([Tests not run when cross compiling])
++    libpcap_version_096=no
+ ])
+ 
+ libpcap_ver8=no
+@@ -448,6 +453,9 @@ AC_RUN_IFELSE(AC_LANG_PROGRAM([[
+     libpcap_ver8=yes
+ ], [
+     libpcap_ver8=no
++], [
++    AC_MSG_WARN([Tests not run when cross compiling])
++    libpcap_ver8=no
+ ])
+ 
+ libpcap_ver7=no
+@@ -473,25 +481,31 @@ extern const char pcap_version[[]]; /* double up since autoconf escapes things *
+     libpcap_ver7=yes
+ ], [
+     libpcap_ver7=no
++], [
++    AC_MSG_WARN([Tests not run when cross compiling])
++    libpcap_ver7=no
+ ])
+ 
+-if test x$libpcap_ver8 = xyes ; then
+-    AC_MSG_RESULT(>= 0.8.0)
+-elif test x$libpcap_ver7 = xyes ; then
+-    AC_MSG_RESULT(>= 0.7.2)
+-else 
+-    AC_MSG_ERROR([Libpcap versions < 0.7.2 are not supported
+-    Please upgrade to version 0.7.2 or better])
+-fi
++AC_CACHE_CHECK([for supported libpcap verision], [tr_cv_libpcap_version],
++[
++    if test x$libpcap_ver8 = xyes ; then
++        AC_MSG_RESULT(>= 0.8.0)
++    elif test x$libpcap_ver7 = xyes ; then
++        AC_MSG_RESULT(>= 0.7.2)
++    else 
++        AC_MSG_ERROR([Libpcap versions < 0.7.2 are not supported
++        Please upgrade to version 0.7.2 or better])
++    fi
+ 
+-libpcap_version=unknown
+-if test x$libpcap_version_096 = xyes ; then
+-    libpcap_version=">= 0.9.6"
+-elif test x$libpcap_ver8 = xyes ; then
+-    libpcap_version=">= 0.8.0"
+-elif test x$libcap_ver7 = xyes ; then
+-    libpcap_version=">= 0.7.0"
+-fi
++    tr_cv_libpcap_version=unknown
++    if test x$libpcap_version_096 = xyes ; then
++        tr_cv_libpcap_version=">= 0.9.6"
++    elif test x$libpcap_ver8 = xyes ; then
++        tr_cv_libpcap_version=">= 0.8.0"
++    elif test x$libcap_ver7 = xyes ; then
++        tr_cv_libpcap_version=">= 0.7.0"
++    fi
++])
+ 
+ dnl Check for pcap_setnonblock()
+ AC_MSG_CHECKING(for pcap_setnonblock)
+@@ -798,6 +812,9 @@ main(int argc, char *argv[]) {
+     have_bpf=yes
+ ],[
+     AC_MSG_RESULT(no)
++],[
++    AC_MSG_WARN([Tests not run when cross compiling])
++    AC_MSG_RESULT(no)
+ ])
+ 
+ 
+@@ -1217,7 +1234,7 @@ AC_MSG_RESULT(
+ ##########################################################################
+              TCPREPLAY Suite Configuration Results (${TCPREPLAY_VERSION})
+ ##########################################################################
+-libpcap:                    ${foundpcap} (${libpcap_version})
++libpcap:                    ${foundpcap} (${tr_cv_libpcap_version})
+ libdnet:                    ${founddnet} (${libdnet_version})
+ autogen:                    ${AUTOGEN} (${AUTOGEN_VERSION})
+ Use libopts tearoff:        ${enable_local_libopts}

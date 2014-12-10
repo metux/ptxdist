@@ -1,0 +1,11 @@
+## SECTION=networking
+
+config TCPREPLAY
+	tristate
+	select LIBC_NSL
+	select LIBC_RT
+	select GCCLIBS_GCC_S
+	select LIBPCAP
+	prompt "tcpreplay"
+	help
+	  FIXME
