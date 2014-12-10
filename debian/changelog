@@ -1,0 +1,5 @@
+ptxdist (2014.12.0-mtx1-trusty0) trusty; urgency=low
+
+  * Packaging for Ubuntu trusty
+
+ -- Enrico Weigelt, metux IT consult <enrico.weigelt@gr13.net>  Wed, 10 Dec 2014 19:23:00 +0100
