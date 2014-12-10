@@ -1,0 +1,12 @@
+Source: ptxdist
+Section: devel
+Priority: extra
+Maintainer: Enrico Weigelt, metux IT consult <info@metux.net>
+Standards-Version: 3.9.3
+Build-Depends: debhelper (>= 7), dh-autoreconf, pkg-config, libncurses-dev, gawk, flex, bison, texinfo, wget, bzip2, gzip, make, gcc, python-dev, patch
+
+Package: ptxdist-2018.03.0
+Architecture: any
+Pre-Depends: debconf
+Depends:  ${misc:Depends}, patch, make, gcc
+Description: Cross toolchain and micro distro toolkit - 2018.03.0
