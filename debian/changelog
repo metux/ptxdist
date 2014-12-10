@@ -1,0 +1,5 @@
+ptxdist (2013.05.0-trusty0) trusty; urgency=low
+
+  * Packaging for Ubuntu trusty
+
+ -- Enrico Weigelt, metux IT service <enrico.weigelt@gr13.net>  Wed, 10 Dec 2014 16:17:00 +0100
