@@ -4,7 +4,7 @@ dnl Most parts of this configure script have been borrowed from quilt.
 dnl
 AC_PREREQ(2.59)
 
-AC_INIT([ptxdist],
+AC_INIT([bin/ptxdist],
 	m4_esyscmd([scripts/kernel/setlocalversion .tarball-version]),
 	[ptxdist@pengutronix.de])
 AC_CONFIG_AUX_DIR(scripts/autoconf)
