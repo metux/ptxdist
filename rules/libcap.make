@@ -16,11 +16,13 @@ PACKAGES-$(PTXCONF_LIBCAP) += libcap
 #
 # Paths and names
 #
-LIBCAP_VERSION	:= 2.21
-LIBCAP_MD5	:= d7c23768860091b248db6a3769ddd9a3
+LIBCAP_VERSION	:= 2.22
+LIBCAP_MD5	:= ce64058bdb3f086ddbfca8ce6c919845
 LIBCAP		:= libcap-$(LIBCAP_VERSION)
 LIBCAP_SUFFIX	:= tar.bz2
-LIBCAP_URL	:= $(call ptx/mirror, KERNEL, libs/security/linux-privs/libcap2/$(LIBCAP).$(LIBCAP_SUFFIX))
+LIBCAP_URL	:= \
+	$(call ptx/mirror, KERNEL, libs/security/linux-privs/libcap2/$(LIBCAP).$(LIBCAP_SUFFIX)) \
+	http://mirror.linux.org.au/linux/libs/security/linux-privs/libcap2/$(LIBCAP).$(LIBCAP_SUFFIX)
 LIBCAP_SOURCE	:= $(SRCDIR)/$(LIBCAP).$(LIBCAP_SUFFIX)
 LIBCAP_DIR	:= $(BUILDDIR)/$(LIBCAP)
 LIBCAP_LICENSE	:= BSD, GPL
@@ -30,7 +32,7 @@ LIBCAP_LICENSE	:= BSD, GPL
 # ----------------------------------------------------------------------------
 
 LIBCAP_MAKE_OPT	:= \
-	prefix= PAM_CAP=no LIBATTR=no lib=lib \
+	prefix= PAM_CAP=no DYNAMIC=yes LIBATTR=no lib=lib \
 	CC=$(CROSS_CC) \
 	BUILD_CC=$(HOSTCC)
 

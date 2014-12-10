@@ -34,21 +34,17 @@ ZLIB_LICENSE	:= zlib
 
 ZLIB_CONF_ENV := \
 	$(CROSS_ENV) \
-	CROSS_PREFIX=$(PTXCONF_COMPILER_PREFIX) \
-	CFLAGS="$(CROSS_CPPFLAGS) -O2 -g"
+	CROSS_PREFIX=$(PTXCONF_COMPILER_PREFIX)
 
 #
 # autoconf
 #
-ZLIB_AUTOCONF := \
+ZLIB_CONF_TOOL := autoconf
+ZLIB_CONF_OPT := \
 	--prefix=/usr \
 	--uname=Linux \
+	$(call ptx/ifdef, PTXCONF_ZLIB_STATIC,--static) \
 	--libdir=/usr/$(CROSS_LIB_DIR)
-
-ifdef PTXCONF_ZLIB_STATIC
-ZLIB_AUTOCONF += --static
-endif
-
 
 # ----------------------------------------------------------------------------
 # Target-Install

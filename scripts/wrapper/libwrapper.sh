@@ -1,21 +1,31 @@
 #!/bin/sh
 
+set -e
+
 COMPILING=false
-LINKING=true
 FORTIFY=true
-STDLIB=true
 FPIE=true
-PIE=true
+HOST=false
+LINKING=true
 OPTIMIZE=false
+PIE=true
+STDLIB=true
+
 ARG_LIST=""
+LATE_ARG_LIST=""
+
+if [ -z "${PTXDIST_PLATFORMCONFIG}" ]; then
+	. "$(dirname "$0")/env" || exit
+fi
 
 . ${PTXDIST_PLATFORMCONFIG}
 
 wrapper_exec() {
+	PATH="$(echo "${PATH}" | sed "s;${PTXDIST_PATH_SYSROOT_HOST}/lib/wrapper:;;")"
 	if [ "${PTXDIST_VERBOSE}" = 1 -a -n "${PTXDIST_FD_LOGFILE}" ]; then
-		echo "wrapper: ${PTXDIST_CCACHE} ${0##*/} ${ARG_LIST} $*" >&${PTXDIST_FD_LOGFILE}
+		echo "wrapper: ${PTXDIST_CCACHE} ${0##*/} ${ARG_LIST} $* ${LATE_ARG_LIST}" >&${PTXDIST_FD_LOGFILE}
 	fi
-	exec ${PTXDIST_CCACHE} $0.real ${ARG_LIST} "$@"
+	exec ${PTXDIST_CCACHE} "${0%/*}/real/${0##*/}" ${ARG_LIST} "$@" ${LATE_ARG_LIST}
 }
 
 cc_check_args() {
@@ -35,11 +45,11 @@ cc_check_args() {
 				;;
 			-fno-PIC | -fno-pic | -fno-PIE | -fno-pie | \
 			-nopie | -static | -shared | \
-			-D__KERNEL__ | -nostartfiles )
+			-D__KERNEL__ | -nostartfiles)
 				FPIE=false
 				PIE=false
 				;;
-			-fPIC | -fpic )
+			-fPIC | -fpic)
 				FPIE=false
 				;;
 			-O0)
@@ -47,10 +57,12 @@ cc_check_args() {
 			-O*)
 				OPTIMIZE=true
 				;;
-			-I/usr/include | -L/usr/lib | -L/lib )
-				echo "wrapper: Bad search path in:" >&2
-				echo "${0##*/} $*" >&2
-				exit 1
+			-I/usr/include | -L/usr/lib | -L/lib)
+				if ! ${HOST}; then
+					echo "wrapper: Bad search path in:" >&2
+					echo "${0##*/} $*" >&2
+					exit 1
+				fi
 				;;
 			-)
 				COMPILING=true
@@ -70,9 +82,11 @@ cc_check_args() {
 }
 
 add_arg() {
-	for arg in "${@}"; do
-		ARG_LIST="${ARG_LIST} ${arg}"
-	done
+	ARG_LIST="${ARG_LIST} ${*}"
+}
+
+add_late_arg() {
+	LATE_ARG_LIST="${LATE_ARG_LIST} ${*}"
 }
 
 add_opt_arg() {
@@ -98,6 +112,7 @@ add_ld_args() {
 	add_opt_arg TARGET_LINKER_HASH_GNU "${1}--hash-style=gnu"
 	add_opt_arg TARGET_LINKER_HASH_SYSV "${1}--hash-style=sysv"
 	add_opt_arg TARGET_LINKER_HASH_BOTH "${1}--hash-style=both"
+	add_opt_arg TARGET_LINKER_AS_NEEDED "${1}--as-needed"
 }
 
 ld_add_ld_args() {
@@ -108,11 +123,17 @@ ld_add_ld_args() {
 	fi
 }
 
-cc_add_ld_args() {
+cc_add_target_ld_args() {
 	if ${LINKING}; then
 		add_ld_args "-Wl,"
-		add_arg ${PTXDIST_CROSS_LDFLAGS}
+		add_late_arg ${PTXDIST_CROSS_LDFLAGS}
 		add_opt_arg TARGET_EXTRA_LDFLAGS ${PTXCONF_TARGET_EXTRA_LDFLAGS}
+	fi
+}
+
+cc_add_host_ld_args() {
+	if ${LINKING}; then
+		add_late_arg ${PTXDIST_HOST_LDFLAGS}
 	fi
 }
 
@@ -140,18 +161,30 @@ cc_add_pie() {
 	fi
 }
 
-cpp_add_extra() {
+cpp_add_target_extra() {
 	add_arg -frecord-gcc-switches
 	add_arg ${PTXDIST_CROSS_CPPFLAGS}
 	add_opt_arg TARGET_EXTRA_CPPFLAGS ${PTXCONF_TARGET_EXTRA_CPPFLAGS}
 }
 
-cc_add_extra() {
-	cpp_add_extra
+cc_add_target_extra() {
+	cpp_add_target_extra
 	add_opt_arg TARGET_EXTRA_CFLAGS ${PTXCONF_TARGET_EXTRA_CFLAGS}
 }
 
-cxx_add_extra() {
-	cpp_add_extra
+cxx_add_target_extra() {
+	cpp_add_target_extra
 	add_opt_arg TARGET_EXTRA_CXXFLAGS ${PTXCONF_TARGET_EXTRA_CXXFLAGS}
+}
+
+cpp_add_host_extra() {
+	add_arg ${PTXDIST_HOST_CPPFLAGS}
+}
+
+cc_add_host_extra() {
+	cpp_add_host_extra
+}
+
+cxx_add_host_extra() {
+	cpp_add_host_extra
 }

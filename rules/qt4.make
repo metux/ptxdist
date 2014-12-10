@@ -57,7 +57,7 @@ $(STATEDIR)/qt4.extract:
 
 # don't use CROSS_ENV. Qt uses mkspecs for instead.
 # 'strip' is our special wrapper to avoid stripping for root-debug
-QT4_ENV		:= $(CROSS_ENV_PKG_CONFIG)  STRIP=strip
+QT4_ENV		:= $(CROSS_ENV_PKG_CONFIG)  STRIP=strip MAKEFLAGS="$(PARALLELMFLAGS)"
 QT4_INSTALL_OPT	:= INSTALL_ROOT=$(QT4_PKGDIR)
 
 ifdef PTXCONF_ARCH_ARM_V6
@@ -553,11 +553,13 @@ ifdef PTXCONF_QT4_BUILD_SVG
 		/usr/plugins/iconengines/libqsvgicon.$(QT4_PLUGIN_EXT))
 endif
 
-ifndef PTXCONF_QT4_BUILD_NETWORK
+ifdef PTXCONF_QT4_BUILD_NETWORK
 	@$(call install_copy, qt4, 0, 0, 0644, -, \
 		/usr/plugins/bearer/libqgenericbearer.$(QT4_PLUGIN_EXT))
+ifdef PTXCONF_QT4_DBUS
 	@$(call install_copy, qt4, 0, 0, 0644, -, \
 		/usr/plugins/bearer/libqnmbearer.$(QT4_PLUGIN_EXT))
+endif
 endif
 ifdef PTXCONF_QT4_BUILD_PHONON
 	@$(call install_copy, qt4, 0, 0, 0644, -, \

@@ -10,12 +10,20 @@ menuconfig SYSTEMD
 	select LIBC_DL
 	select DBUS
 	select LIBCAP
-	select UDEV
+	select UDEV		if RUNTIME
 	select UDEV_LIBUDEV
 	select MACHINE_ID	if RUNTIME
 	select DBUS_PYTHON	if SYSTEMD_ANALYZE && RUNTIME
 	select TCPWRAPPER	if SYSTEMD_TCPWRAP
 	select XZ		if SYSTEMD_XZ
+	select LIBSELINUX	if GLOBAL_SELINUX
+	# for udev:
+	select ROOTFS_DEV
+	select LIBKMOD
+	select LIBBLKID
+	select GLIB		if UDEV_LIBGUDEV
+	select PCIUTILS		if UDEV_PERSISTENT_PCI && RUNTIME
+	select USBUTILS		if UDEV_PERSISTENT_USB && RUNTIME
 	prompt "systemd                       "
 	help
 	  systemd is a system and session manager for Linux, compatible with SysV

@@ -157,7 +157,8 @@ endif
 # ----------------------------------------------------------------------------
 
 ifdef PTXCONF_SYSTEMD
-$(STATEDIR)/udev.targetinstall: $(STATEDIR)/systemd.install.post
+$(STATEDIR)/udev.extract.post: $(STATEDIR)/systemd.install.post
+$(STATEDIR)/udev.install.unpack: $(STATEDIR)/systemd.install.post
 endif
 
 $(STATEDIR)/udev.targetinstall:
@@ -210,7 +211,7 @@ ifdef PTXCONF_UDEV_CUST_RULES
 endif
 
 	@$(foreach helper, $(UDEV_HELPER-y), \
-		$(call install_copy, udev, 0, 0, 0644, -, \
+		$(call install_copy, udev, 0, 0, 0755, -, \
 			/lib/udev//$(helper));)
 
 ifdef PTXCONF_UDEV_ACL

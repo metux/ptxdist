@@ -51,12 +51,11 @@ BUSYBOX_MAKE_OPT := \
 	V=$(PTXDIST_VERBOSE) \
 	ARCH=$(PTXCONF_ARCH_STRING) \
 	SUBARCH=$(PTXCONF_ARCH_STRING) \
-	CROSS_COMPILE=$(COMPILER_PREFIX) \
-	HOSTCC=$(HOSTCC)
+	CROSS_COMPILE=$(COMPILER_PREFIX)
 
 BUSYBOX_MAKE_ENV := \
 	$(CROSS_ENV) \
-	CFLAGS="$(CROSS_CFLAGS) -I$(KERNEL_HEADERS_INCLUDE_DIR)" \
+	CFLAGS="-I$(KERNEL_HEADERS_INCLUDE_DIR)" \
 	SKIP_STRIP=y
 
 BUSYBOX_INSTALL_ENV := \
@@ -74,8 +73,15 @@ BUSYBOX_INSTALL_OPT := \
 $(STATEDIR)/busybox.install:
 	@$(call targetinfo)
 	@$(call world/install, BUSYBOX)
-	install -D -m644 $(BUSYBOX_DIR)/busybox.links \
+	@install -D -m644 $(BUSYBOX_DIR)/busybox.links \
 		$(BUSYBOX_PKGDIR)/etc/busybox.links
+ifdef PTXCONF_BUSYBOX_FEATURE_INDIVIDUAL
+	@install -D -m644 $(BUSYBOX_DIR)/0_lib/libbusybox.so.$(BUSYBOX_VERSION) \
+		$(BUSYBOX_PKGDIR)/lib/libbusybox.so.$(BUSYBOX_VERSION)
+	@mkdir -p $(BUSYBOX_PKGDIR)/usr/lib/busybox
+	@cp -r $(BUSYBOX_DIR)/0_lib/* \
+		$(BUSYBOX_PKGDIR)/usr/lib/busybox
+endif
 	@$(call touch)
 
 # ----------------------------------------------------------------------------
@@ -91,6 +97,20 @@ $(STATEDIR)/busybox.targetinstall:
 	@$(call install_fixup, busybox,AUTHOR,"Robert Schwebel <r.schwebel@pengutronix.de>")
 	@$(call install_fixup, busybox,DESCRIPTION,missing)
 
+ifdef PTXCONF_BUSYBOX_FEATURE_INDIVIDUAL
+#
+# individual busybox applets and shared lib
+#
+	@$(call install_lib, busybox, 0, 0, 0644, libbusybox)
+
+	@cat $(BUSYBOX_PKGDIR)/etc/busybox.links | while read link; do \
+		$(call install_copy, busybox, 0, 0, 755, \
+		"$(BUSYBOX_PKGDIR)/usr/lib/busybox/$${link##*/}", "$${link}"); \
+	done
+else
+#
+# traditionally busybox with links
+#
 ifdef PTXCONF_BUSYBOX_FEATURE_SUID
 	@$(call install_copy, busybox, 0, 0, 4755, -, /bin/busybox)
 ifdef PTXCONF_BUSYBOX_FEATURE_SUID_CONFIG
@@ -108,6 +128,7 @@ endif
 		esac;							\
 		$(call install_link, busybox, "$${to}", "$${link}");	\
 	done
+endif
 
 ifdef PTXCONF_BUSYBOX_FTPD_INETD
 	@$(call install_alternative, busybox, 0, 0, 0644, /etc/inetd.conf.d/ftpd)

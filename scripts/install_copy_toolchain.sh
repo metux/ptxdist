@@ -3,48 +3,6 @@
 . ${PTXDIST_TOPDIR}/scripts/ptxdist_vars.sh
 . ${SCRIPTSDIR}/libptxdist.sh
 
-#
-# $1 = from
-# $2 = to
-#
-# out: relative path
-#
-ptxd_abs2rel() {
-    local from from_parts to to_parts max orig_IFS
-
-    [ ${#} -eq 2 ] || ptxd_bailout "supply exactly two paths"
-
-    from="${1}"
-    to="${2}"
-
-    orig_IFS="${IFS}"
-    IFS="/"
-    from_parts=(${from#/})
-    to_parts=(${to#/})
-
-    if [ ${#from_parts[@]} -gt ${#to_parts[@]} ]; then
-	max=${#from_parts[@]}
-    else
-	max=${#to_parts[@]}
-    fi
-
-    for ((i = 0; i < ${max}; i++)); do
-	from="${from_parts[i]}"
-	to="${to_parts[i]}"
-
-	if [ "${from}" = "${to}" ]; then
-	    unset from_parts[$i]
-	    unset to_parts[$i]
-	elif [ -n "${from}" ]; then
-	    from_parts[$i]=".."
-	fi
-    done
-    
-    echo "${from_parts[*]}${from_parts[*]:+/}${to_parts[*]}"
-    IFS="${orig_IFS}"
-}
-
-
 # $1: lib
 #
 # out: $lib_path
@@ -141,10 +99,6 @@ ptxd_install_toolchain_lib() {
 
 	# guess sysroot from given lib
 	eval $(ptxd_split_lib_prefix_sysroot_eval "${lib_path}")
-	if test -z "${prefix}" -a -z "${dest}"; then
-	    ptxd_bailout "cannot identify prefix and no user supplied dest"
-	fi
-
 	# if the user has given us a $dest use it
 	prefix="${dest:-${prefix}}"
 
@@ -170,10 +124,12 @@ ptxd_install_toolchain_lib() {
 	    eval $(ptxd_split_lib_prefix_sysroot_eval "${lnk_path}" lnk)
 	    lnk_prefix="${dest:-${lnk_prefix}}"
 
-	    lnk_prefix="$(ptxd_abs2rel "${prefix}" "${lnk_prefix}")"
-	    lnk_prefix="${lnk_prefix}${lnk_prefix:+/}"
-	    # now remember that link for later
-	    echo "ptxd_install_link \"${lnk_prefix}${lnk}\" \"${prefix}/${lib}\"" >> "${STATEDIR}/${packet}.cmds"
+	    if test -n "${prefix}"; then
+		lnk_prefix="$(ptxd_abs2rel "${prefix}" "${lnk_prefix}")"
+		lnk_prefix="${lnk_prefix}${lnk_prefix:+/}"
+		# now remember that link for later
+		echo "ptxd_install_link \"${lnk_prefix}${lnk}\" \"${prefix}/${lib}\"" >> "${STATEDIR}/${packet}.cmds"
+	    fi
 
 	    lib_path="${lnk_path}"
 	    continue
@@ -189,7 +145,9 @@ ptxd_install_toolchain_lib() {
 		    # deal with relative and absolute libs
 		    case "${script_lib}" in
 			/*.so*)
-			    script_lib="${sysroot}${script_lib}"
+			    if [ "${script_lib#${sysroot}}" = "${script_lib}" ]; then
+				script_lib="${sysroot}${script_lib}"
+			    fi
 			    ;;
 			*.so*)
 			    script_lib="$(ptxd_get_lib_path "${script_lib}")"
@@ -206,24 +164,13 @@ ptxd_install_toolchain_lib() {
 		# ordinary shared lib, just copy it
 		echo "lib - ${lib_path}"
 
+		if test -z "${prefix}"; then
+		    ptxd_bailout "cannot identify prefix and no user supplied dest"
+		fi
+
 		perm="$(stat -c %a "${lib_path}")"
 
-		echo "ptxd_install_file \"${lib_path}\" \"${prefix}/${lib}\" 0 0 \"${perm}\" \"${strip}\"" >> "${STATEDIR}/${packet}.cmds"
-
-		# now create some links to that lib
-		# e.g. libstdc++.so.6 -> libstdc++.so.6.6.6
-
-		# the fullversion (6.6.6)
-		v_full="${lib#*.so.}"
-		# library name with major version (libstdc++.so.6)
-		lib_v_major="${lib%${v_full}}${v_full%%.*}"
-
-		if test "${v_full}" != "${lib}" -a \
-		    "${lib_v_major}" != "${lib}"; then
-		    echo "extra link - ${prefix}/${lib_v_major}"
-
-		    echo "ptxd_install_link \"${lib}\" \"${prefix}/${lib_v_major}\"" >> "${STATEDIR}/${packet}.cmds"
-		fi
+		echo "ptxd_install_shared \"${lib_path}\" \"${prefix}\" 0 0 \"${perm}\"" >> "${STATEDIR}/${packet}.cmds"
 	    fi
 	else
 	    echo "error: found ${lib_path}, but neither file nor link" 2>&1
@@ -232,50 +179,6 @@ ptxd_install_toolchain_lib() {
 
 	return 0
     done
-}
-
-
-_ptxd_get_sysroot_usr_by_sysroot() {
-    local sysroot
-
-    sysroot="$(ptxd_cross_cc_v | \
-	sed -ne "/.*collect2.*/s,.*--sysroot=\([^[:space:]]*\).*,\1,p")"
-
-    test -n "${sysroot}" || return 1
-
-    echo "$(ptxd_abspath ${sysroot}/usr)"
-}
-
-
-_ptxd_get_sysroot_usr_by_progname() {
-    local prog_name
-
-    prog_name="$(ptxd_cross_cc -print-prog-name=gcc)"
-    case "${prog_name}" in
-	/*)
-	    prog_name="$(ptxd_abspath ${prog_name%/bin/gcc})"
-	    ;;
-	*)
-	    if test "${NATIVE}" = "1"; then
-		prog_name="/usr"
-	    else
-		return 1
-	    fi
-	    ;;
-    esac
-
-    echo "${prog_name}"
-}
-
-
-ptxd_get_sysroot_usr() {
-    local sysroot_usr
-
-    sysroot_usr="$(_ptxd_get_sysroot_usr_by_sysroot)" ||
-    sysroot_usr="$(_ptxd_get_sysroot_usr_by_progname)" ||
-    ( echo "unable to identify your SYSROOT, giving up"; return $? )
-
-    echo "${sysroot_usr}"
 }
 
 
@@ -291,7 +194,7 @@ ptxd_install_toolchain_usr() {
 
     eval "${@}"
 
-    sysroot_usr="$(ptxd_get_sysroot_usr)" || return $?
+    sysroot_usr="${PTXDIST_SYSROOT_TOOLCHAIN}/usr"
 
     if test -z "$(find ${sysroot_usr} -path "${sysroot_usr}/${usr}" -a \! -type d)"; then
 	echo "file ${usr} not found"
@@ -354,6 +257,4 @@ ptxd_install_copy_toolchain() {
 #
 # main()
 #
-# FIXME: ugly hack to use this script as library as well
-#
-[ $(basename $0) != "make_locale.sh" ] && [ $(basename $0) != "make_zoneinfo.sh" ] && ptxd_install_copy_toolchain "${@}"
+ptxd_install_copy_toolchain "${@}"

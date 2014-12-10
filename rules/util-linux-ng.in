@@ -26,6 +26,9 @@ config UTIL_LINUX_NG_USES_NCURSES
 config UTIL_LINUX_NG_PARTX_TOOLS
 	bool
 
+config UTIL_LINUX_NG_SCHEDUTILS
+	bool
+
 config UTIL_LINUX_NG_AGETTY
 	bool
 	prompt "agetty"
@@ -68,9 +71,13 @@ config UTIL_LINUX_NG_PARTX
 config UTIL_LINUX_NG_MOUNTPOINT
 	bool
 	select UTIL_LINUX_NG_LIBMOUNT
+	depends on !BUSYBOX_MOUNTPOINT || ALLYES
 	prompt "mountpoint"
 	help
 	  The mountpoint utility.
+
+comment "BusyBox' mountpoint is selected!"
+	depends on BUSYBOX_MOUNTPOINT
 
 config UTIL_LINUX_NG_DDATE
 	bool
@@ -86,7 +93,7 @@ config UTIL_LINUX_NG_FDISK
 	  fdisk - Partition table manipulator for Linux
 
 comment "BusyBox' fdisk is selected!"
-	depends on UTIL_LINUX_NG && BUSYBOX_FDISK
+	depends on BUSYBOX_FDISK
 
 config UTIL_LINUX_NG_SFDISK
 	bool
@@ -131,6 +138,7 @@ comment "BusyBox' swapon is selected!"
 config UTIL_LINUX_NG_MOUNT
 	bool
 	prompt "mount"
+	select UTIL_LINUX_NG_LIBMOUNT
 	depends on !BUSYBOX_MOUNT || ALLYES
 	help
 	  The mount command serves to attach the file system
@@ -142,6 +150,8 @@ comment "BusyBox' mount is selected!"
 config UTIL_LINUX_NG_UMOUNT
 	bool
 	prompt "umount"
+	select UTIL_LINUX_NG_MOUNT
+	depends on !BUSYBOX_MOUNT || ALLYES
 	depends on !BUSYBOX_UMOUNT || ALLYES
 	help
 	  The mount(8) command serves to attach the file system
@@ -213,6 +223,7 @@ config UTIL_LINUX_NG_SETTERM
 config UTIL_LINUX_NG_CHRT
 	bool
 	prompt "chrt"
+	select UTIL_LINUX_NG_SCHEDUTILS
 	depends on !BUSYBOX_CHRT || ALLYES
 	help
 	  chrt manipulates the real-time attributes of a process.
@@ -236,14 +247,20 @@ comment "BusyBox' hwclock is selected!"
 config UTIL_LINUX_NG_IONICE
 	bool
 	prompt "ionice"
+	select UTIL_LINUX_NG_SCHEDUTILS
 	help
 	  ionice gets/sets the program io scheduling class and priority.
 
 config UTIL_LINUX_NG_TASKSET
 	bool
 	prompt "taskset"
+	select UTIL_LINUX_NG_SCHEDUTILS
+	depends on !BUSYBOX_TASKSET || ALLYES
 	help
 	  taskset retrieves or sets a process's CPU affinity.
+
+comment "BusyBox' taskset is selected!"
+	depends on BUSYBOX_TASKSET
 
 config UTIL_LINUX_NG_MCOOKIE
 	bool
@@ -251,6 +268,12 @@ config UTIL_LINUX_NG_MCOOKIE
 	help
 	  mcookie generates a 128-bit random hexadecimal number for
 	  use with the X authority system.
+
+config UTIL_LINUX_NG_LDATTACH
+	bool
+	prompt "ldattach"
+	help
+	  attach a line discipline to a serial line
 
 config UTIL_LINUX_NG_UUIDD
 	bool
@@ -273,6 +296,7 @@ config UTIL_LINUX_NG_BLKID
 	bool
 	select UTIL_LINUX_NG_LIBBLKID
 	select UTIL_LINUX_NG_LIBUUID
+	depends on !BUSYBOX_BLKID || ALLYES
 	prompt "blkid"
 	help
 	  The  blkid  program is the command-line interface to working with libblkid
@@ -280,12 +304,19 @@ config UTIL_LINUX_NG_BLKID
 	  a block device holds, and also attributes (tokens, NAME=value pairs) from
 	  the content meta‐data (e.g. LABEL or UUID fields).
 
+comment "BusyBox' blkid is selected!"
+	depends on BUSYBOX_BLKID
+
 config UTIL_LINUX_NG_FINDFS
 	bool
 	select UTIL_LINUX_NG_LIBBLKID
+	depends on !BUSYBOX_FINDFS || ALLYES
 	prompt "findfs"
 	help
 	  findfs will search the disks in the system looking for a filesystem
 	  which has a label matching label or a UUID equal to uuid.
+
+comment "BusyBox' findfs is selected!"
+	depends on BUSYBOX_FINDFS
 
 endif

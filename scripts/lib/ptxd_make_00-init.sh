@@ -28,6 +28,9 @@ ptxd_init_arch() {
 		arm-*gnueabi|armle*gnueabi|armel*gnueabi)
 		    ipkg_arch=armel
 		    ;;
+		arm-*gnueabihf|armle*gnueabihf|armel*gnueabihf)
+		    ipkg_arch=armhf
+		    ;;
 		*)
 		    ipkg_arch=arm
 		    ;;
@@ -104,7 +107,7 @@ ptxd_init_sysroot_toolchain() {
 	    "$(ptxd_cross_cc -print-file-name=libc.so 2> /dev/null)")"
 
 	if [ $? -ne 0 -o -z "${sysroot}" ]; then
-	    return 1
+	    ptxd_bailout "Could not detect toolchain sysroot! The toolchain is broken or not configured correctly."
 	fi
 
 	PTXDIST_SYSROOT_TOOLCHAIN="$(ptxd_abspath "${sysroot}")" || return
@@ -148,6 +151,22 @@ ptxd_init_ptxdist_path_sysroot() {
 	PTXDIST_PATH_SYSROOT_ALL="${sysroot_all}" \
 	PTXDIST_PATH_SYSROOT_PREFIX="${sysroot_prefix}" \
 	PTXDIST_PATH_SYSROOT_PREFIX_ALL="${sysroot_prefix_all}"
+}
+
+
+#
+# get host sysroot
+#
+# out:
+# PTXDIST_PATH_SYSROOT_HOST		sysroot
+# PTXDIST_PATH_SYSROOT_HOST_PREFIX	prefixes (/) of sysroot
+#
+ptxd_init_ptxdist_path_sysroot_host() {
+    local sysroot="$(ptxd_get_ptxconf PTXCONF_SYSROOT_HOST)"
+
+    export \
+	PTXDIST_PATH_SYSROOT_HOST="${sysroot}" \
+	PTXDIST_PATH_SYSROOT_HOST_PREFIX="${sysroot}"
 }
 
 
@@ -275,6 +294,64 @@ ptxd_init_cross_env() {
     IFS="${orig_IFS}"
 }
 
+#
+# setup compiler and pkgconfig environment
+#
+# in:
+# ${PTXDIST_PATH_SYSROOT_HOST}
+#
+#
+# out:
+# PTXDIST_HOST_CPPFLAGS			CPPFLAGS for host packages
+# PTXDIST_HOST_LDFLAGS			LDFLAGS for host packages
+# PTXDIST_HOST_ENV_PKG_CONFIG		PKG_CONFIG_* environemnt for host pkg-config
+#
+ptxd_init_host_env() {
+    ######## CPPFLAGS, LDFLAGS ########
+    local orig_IFS="${IFS}"
+    IFS=":"
+    local -a prefix
+    prefix=( ${PTXDIST_PATH_SYSROOT_HOST_PREFIX} )
+    IFS="${orig_IFS}"
+
+    local -a lib_dir
+    lib_dir=lib
+
+    # add "-isystem <DIR>/include"
+    local -a cppflags
+    cppflags=( "${prefix[@]/%//include}" )
+    cppflags=( "${cppflags[@]/#/-isystem }" )
+
+    # add "-L<DIR>/lib -Wl,-rpath-link -Wl,<DIR>"
+    local -a ldflags
+    ldflags=( "${prefix[@]/%//${lib_dir}}" )
+    ldflags=( \
+	"${ldflags[@]/#/-L}" \
+	"${ldflags[@]/#/-Wl,-rpath -Wl,}" \
+	"-Wl,-rpath" "-Wl,/this/is/a/long/path/to/make/host/tools/relocateable/with/chrpath/when/using/dev/packages"
+    )
+
+    export \
+	PTXDIST_HOST_CPPFLAGS="${cppflags[*]}" \
+	PTXDIST_HOST_LDFLAGS="${ldflags[*]}"
+
+    ######## PKG_CONFIG_LIBDIR, PKG_CONFIG_PATH ########
+
+    #
+    # PKG_CONFIG_LIBDIR contains the default pkg-config search
+    # directories.
+    #
+
+    # add <DIR>/lib/pkgconfig and <DIR>/share/pkgconfig
+    local -a pkg_libdir
+    pkg_libdir=( "${prefix[@]/%//${lib_dir}/pkgconfig}" "${prefix[@]/%//share/pkgconfig}" )
+
+    IFS=":"
+    PTXDIST_HOST_ENV_PKG_CONFIG="PKG_CONFIG_PATH='' PKG_CONFIG_LIBDIR='${pkg_libdir[*]}'"
+    export PTXDIST_HOST_ENV_PKG_CONFIG
+    IFS="${orig_IFS}"
+}
+
 ptxd_init_devpkg()
 {
     local prefix
@@ -305,6 +382,18 @@ ptxd_init_devpkg()
     export PTXDIST_DEVPKG_PLATFORMDIR
 }
 
+ptxd_init_save_wrapper_env() {
+    local sysroot="$(ptxd_get_ptxconf PTXCONF_SYSROOT_HOST)"
+
+    cat > ${sysroot}/lib/wrapper/env <<- EOF
+	PTXDIST_PLATFORMCONFIG="${PTXDIST_PLATFORMCONFIG}"
+	PTXDIST_CROSS_CPPFLAGS="${PTXDIST_CROSS_CPPFLAGS}"
+	PTXDIST_CROSS_LDFLAGS="${PTXDIST_CROSS_LDFLAGS}"
+	PTXDIST_HOST_CPPFLAGS="${PTXDIST_HOST_CPPFLAGS}"
+	PTXDIST_HOST_LDFLAGS="${PTXDIST_HOST_LDFLAGS}"
+	EOF
+}
+
 #
 # initialize vars needed by PTXdist's make
 #
@@ -317,12 +406,15 @@ ptxd_make_init() {
     fi &&
 
     ptxd_init_ptxdist_path_sysroot &&
+    ptxd_init_ptxdist_path_sysroot_host &&
 
     ptxd_init_devpkg &&
 
     if [ -n "${PTXDIST_BASE_PLATFORMDIR}" ]; then
 	ptxd_init_collectionconfig
     fi &&
-    ptxd_init_cross_env
+    ptxd_init_cross_env &&
+    ptxd_init_host_env &&
+    ptxd_init_save_wrapper_env
 }
 ptxd_make_init

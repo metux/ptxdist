@@ -23,7 +23,7 @@ SPEEX_SUFFIX	:= tar.gz
 SPEEX_URL	:= http://downloads.xiph.org/releases/speex/$(SPEEX).$(SPEEX_SUFFIX)
 SPEEX_SOURCE	:= $(SRCDIR)/$(SPEEX).$(SPEEX_SUFFIX)
 SPEEX_DIR	:= $(BUILDDIR)/$(SPEEX)
-SPEEX_LICENSE	:= unknown
+SPEEX_LICENSE	:= BSD-style
 
 # ----------------------------------------------------------------------------
 # Prepare
@@ -42,10 +42,10 @@ SPEEX_CONF_OPT := \
 	$(CROSS_AUTOCONF_USR) \
 	--disable-oggtest \
 	--disable-valgrind \
-	--disable-fixed-point-debug \
-	--enable-fixed-point \
-	--disable-float-api \
-	--disable-vbr \
+	--$(call ptx/endis, PTXCONF_SPEEX_FIXED_POINT)-fixed-point \
+	--$(call ptx/endis, PTXCONF_SPEEX_FIXED_POINT_DEBUG)-fixed-point-debug \
+	--$(call ptx/endis, PTXCONF_SPEEX_FLOAT_API)-float-api \
+	--$(call ptx/endis, PTXCONF_SPEEX_VBR)-vbr \
 	--disable-ti-c55x \
 	--with-fft=$(SPEEX_FFT-y) \
 	--with-ogg=$(PTXDIST_SYSROOT_TARGET)/usr
