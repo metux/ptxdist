@@ -144,3 +144,52 @@ menuconfig STAGING
 if STAGING
 source "generated/staging.in"
 endif
+
+comment "------- Source repositories --------"
+
+menuconfig GITSRC
+	bool
+	prompt "Git Source Repositories       "
+	help
+	  Instead of downloading tarballs from external locations and apply dozens
+	  of patches to them, we now can directly use git repositories. Note that
+	  this is *different* from just using git:// URLs for download - that still
+	  just downloads tarballs and treats them in the usual way.
+
+	  With this feature, we use an entirely different approach: directly
+	  fetching the final source trees via git, from a defined refname.
+	  All potential additional patches are expected to be already applied
+	  on the given git tree.
+
+	  The repo URL pattern is defined in SETUP_GITSRC_MIRROR and the refname
+	  pattern in SETUP_GIT_REFPREFIX
+	  See futher options on how repo URLs and refnames are constructed.
+
+if GITSRC
+
+config GITSRC_MIRROR
+	string
+	default "${PTXDIST_WORKDIR}/repos/%p.git"
+	prompt "repository mirror prefix"
+	help
+	  URL prefix for all git repositories.
+	  Production environments might wanna use their own mirror of the OSSQM repositories.
+
+	  The pattern %p is replaced by the package name.
+
+config GITSRC_REFNAME
+	string
+	default "refs/tags/%p-$v"
+	prompt "git refname pattern"
+	help
+	  The source tree will be fetched from a reference named by this prefix plus the package version/tagname (defined in the *.mak~
+	  This prefix will be added to them, allowing a global switch, eg. for using an own vendor namespace.
+
+config GITSRC_FULLCLONE
+	bool
+	prompt "clone instead of tree-export"
+	help
+	  Normal unpack behaviour is just to export an tree into an working directory.
+	  Pulling this switch causes the full repos to be cloned, so we can directly use them for development.
+
+endif
