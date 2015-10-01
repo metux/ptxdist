@@ -1,3 +1,10 @@
+ptxdist (2014.12.0-mtx1-trusty1) trusty; urgency=medium
+
+  * Switched to MVCC packaging
+
+ -- Enrico Weigelt, metux IT consult <enrico.weigelt@gr13.net>  Thu, 01 Oct 2014 12:38:00 +0100
+
+
 ptxdist (2014.12.0-mtx1-trusty0) trusty; urgency=low
 
   * Packaging for Ubuntu trusty
